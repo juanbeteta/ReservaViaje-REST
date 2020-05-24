@@ -67,6 +67,14 @@ exports.up = function (knex) {
             t.integer('precio');
             t.timestamps(true, true);
         }),
+        knex.schema.createTable('reserva_viaje', function (t) {
+            t.increments('id').unsigned().primary(); //vuelo_id, hotel_id, coche_id, precio
+            t.integer('vuelo_id');
+            t.integer('hotel_id');
+            t.integer('coche_id');
+            t.integer('precio');
+            t.timestamps(true, true);
+        }),
     ]);
 };
 
@@ -76,6 +84,7 @@ exports.down = function (knex) {
         knex.schema.dropTable('reserva_avion'),
         knex.schema.dropTable('avion'),
         knex.schema.dropTable('hotel'),
-        knex.schema.dropTable('reserva_hotel')
+        knex.schema.dropTable('reserva_hotel'),
+        knex.schema.dropTable('reserva_viaje')
     ]);
 };

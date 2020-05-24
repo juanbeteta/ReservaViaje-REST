@@ -97,6 +97,29 @@ async function reservarCoche(reserva_id, fecha_recogida, fecha_devolucion, lugar
         })
 }
 
+async function reservarViaje(vuelo_id, hotel_id, coche_id, precio) {
+    return await knex('reserva_viaje')
+        .insert({
+            vuelo_id: vuelo_id,
+            hotel_id: hotel_id,
+            coche_id: coche_id,
+            precio: precio
+        })
+}
+
+app.route('/reservaViaje')
+    .post( async (pet, resp)=> {
+        try {
+            await reservarViaje(pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
+
+            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+        }
+        catch (error) {
+            resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
+        }
+    })
+
 app.route('/usuario/verificar')
     .get(async (pet, resp) => {
         try {
