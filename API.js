@@ -21,11 +21,22 @@ const knex = require('knex')({
 
 async function comprobarVuelo(fecha_ida, fecha_regreso, lugar_origen, lugar_destino) {
     return await knex.raw(` select precio
-                            from vuelo_avion 
+                            from avion 
                             where fecha_ida="` + fecha_ida + `" and 
                                   fecha_regreso="` + fecha_regreso + `" and 
                                   lugar_origen="` + lugar_origen + `" and 
-                                  lugar_destino="` + lugar_destino +`"`
+                                  lugar_destino="` + lugar_destino + `"`
+    );
+}
+
+// pet.body.fecha_checkin, pet.body.fecha_checkout, pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio
+async function comprobarHotel(fecha_checkin, fecha_checkout, tipo_habitacion, cama_supletoria) {
+    return await knex.raw(` select precio
+                            from hotel 
+                            where fecha_checkin="` + fecha_checkin + `" and 
+                                  fecha_checkout="` + fecha_checkout + `" and 
+                                  tipo_habitacion="` + tipo_habitacion + `" and 
+                                  cama_supletoria=` + cama_supletoria
     );
 }
 
@@ -50,61 +61,115 @@ async function reservarAvion(reserva_id, fecha_ida, fecha_regreso, cantidad_pers
     //.returning('id')
 }
 
+async function reservarHotel(reserva_id, fecha_checkin, fecha_checkout, tipo_habitacion, cama_supletoria, precio) {
+    return await knex('reserva_hotel')
+        .insert({
+            reserva_id: reserva_id,
+            fecha_checkin: fecha_checkin,
+            fecha_checkout: fecha_checkout,
+            tipo_habitacion: tipo_habitacion,
+            cama_supletoria: cama_supletoria,
+            precio: precio
+        })
+}
+
 app.route('/usuario/verificar')
     .get(async (pet, resp) => {
-
         try {
             const verificar = await verificarUsuario(pet.body.usuario, pet.body.password)
 
             if (verificar.length > 0)
-                resp.status(200).send('Verificación correcta');
+                resp.status(200).json({ allOk: true })
             else
-                resp.status(400).send('Verificación incorrecta');
+                resp.status(400).json({ allOk: false })
         }
         catch (error) {
-            resp.status(500).send('Error en el servidor')
+            resp.status(500).json({ allOk: false })
         }
     });
 
-app.route('/reservaAvion')
+app.route('/avion/reservaAvion')
     .post(async (pet, resp) => {
         try {
             await reservarAvion(pet.body.reserva_id, pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas, pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
 
-            resp.status(200).json({precio: pet.body.precio, allOk: true})
+            resp.status(200).json({ precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).send('Error en el servidor')
+            resp.status(500).json({ allOk: false })
         }
     })
 
-app.route('/validar')
+app.route('/avion/validar')
     .get(async (pet, resp) => {
-        if (pet.body.reserva_id != "" && pet.body.fecha_ida != "" && pet.body.fecha_regreso != "" && pet.body.cantidad_personas > 0 && pet.body.lugar_ogigen != "" && pet.body.lugar_destino != "" && pet.body.precio > 0)
-            resp.status(200).send('Verificación correcta');
+        if (pet.body.reserva_id != null && pet.body.fecha_ida != null && pet.body.fecha_regreso != null &&
+            pet.body.cantidad_personas > 0 && pet.body.lugar_ogigen != null && pet.body.lugar_destino != null && pet.body.precio > 0)
+
+            resp.status(200).json({ allOk: true })
         else
-            resp.status(400).send('Verificación incorrecta');
+            resp.status(400).json({ allOk: false })
     })
 
-app.route('/disponibilidad')
+app.route('/avion/disponibilidad')
     .get(async (pet, resp) => {
         try {
             const res = await comprobarVuelo(pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.lugar_origen, pet.body.lugar_destino)
-            
-            var precio = res[0].precio //obtengo el primero
-            if(precio > 0)
-                resp.status(200).json({precio: precio, allOk: true})
-             else
-                resp.status(200).json({precio: -1, allOk: false})
-            
+
+            if (res.length > 0) {
+                var precio = res[0].precio //obtengo el primero
+                resp.status(200).json({ precio: precio, allOk: true })
+
+            } else
+                resp.status(200).json({ precio: -1, allOk: false })
+
         }
         catch (error) {
-            resp.status(500).send('Error en el servidor')
+            resp.status(500).json({ allOk: false })
         }
     })
 
+app.route('/hotel/reservaHotel')
+    .post(async (pet, resp) => {
+        try {
+            await reservarHotel(pet.body.reserva_id, pet.body.fecha_checkin, pet.body.fecha_checkout,
+                pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio)
 
+            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+        }
+        catch (error) {
+            resp.status(500).json({ allOk: false })
+        }
+    })
 
+app.route('/hotel/validar')
+    .get(async (pet, resp) => {
+        if (pet.body.reserva_id != null && pet.body.fecha_checkin != null &&
+            pet.body.fecha_checkout != null && pet.body.tipo_habitacion > 0 && pet.body.precio > 0)
+
+            resp.status(200).json({ allOk: true })
+        else
+            resp.status(400).json({ allOk: false })
+    })
+
+app.route('/hotel/disponibilidad')
+    .get(async (pet, resp) => {
+        try {
+            const res = await comprobarHotel(pet.body.fecha_checkin, pet.body.fecha_checkout,
+                pet.body.tipo_habitacion, pet.body.cama_supletoria)
+
+            if (res.length > 0) {
+                var precio = res[0].precio //obtengo el primero
+                resp.status(200).json({ precio: precio, allOk: true })
+
+            } else
+                resp.status(200).json({ precio: -1, allOk: false })
+
+        }
+        catch (error) {
+            resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
+        }
+    })
 
 //En Express asociamos un método HTTP y una URL con un callback a ejecutar
 app.get('*', function (pet, resp) {

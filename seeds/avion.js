@@ -32,5 +32,5 @@ exports.seed = async function (knex, Promise) {
    vuelos.push(vuelo1());
    vuelos.push(vuelo2());
    vuelos.push(vuelo3());
-   await knex('vuelo_avion').insert(vuelos)
+   await knex('avion').insert(vuelos)
 };
