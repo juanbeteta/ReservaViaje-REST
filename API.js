@@ -19,6 +19,17 @@ const knex = require('knex')({
     useNullAsDefault: true
 });
 
+async function comprobarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno) {
+    return await knex.raw(` select precio
+                            from coche 
+                            where fecha_recogida="` + fecha_recogida + `" and 
+                                  fecha_devolucion="` + fecha_devolucion + `" and 
+                                  lugar_recogida="` + lugar_recogida + `" and 
+                                  lugar_devolucion="` + lugar_devolucion + `" and 
+                                  tanque_lleno=` + tanque_lleno
+    );
+}
+
 async function comprobarVuelo(fecha_ida, fecha_regreso, lugar_origen, lugar_destino) {
     return await knex.raw(` select precio
                             from avion 
@@ -73,6 +84,19 @@ async function reservarHotel(reserva_id, fecha_checkin, fecha_checkout, tipo_hab
         })
 }
 
+async function reservarCoche(reserva_id, fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno, precio) {
+    return await knex('reserva_coche')
+        .insert({
+            reserva_id: reserva_id,
+            fecha_recogida: fecha_recogida,
+            fecha_devolucion: fecha_devolucion,
+            lugar_recogida: lugar_recogida,
+            lugar_devolucion: lugar_devolucion,
+            tanque_lleno: tanque_lleno,
+            precio: precio
+        })
+}
+
 app.route('/usuario/verificar')
     .get(async (pet, resp) => {
         try {
@@ -85,6 +109,7 @@ app.route('/usuario/verificar')
         }
         catch (error) {
             resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
         }
     });
 
@@ -97,6 +122,7 @@ app.route('/avion/reservaAvion')
         }
         catch (error) {
             resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
         }
     })
 
@@ -125,6 +151,7 @@ app.route('/avion/disponibilidad')
         }
         catch (error) {
             resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
         }
     })
 
@@ -138,6 +165,7 @@ app.route('/hotel/reservaHotel')
         }
         catch (error) {
             resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
         }
     })
 
@@ -156,6 +184,52 @@ app.route('/hotel/disponibilidad')
         try {
             const res = await comprobarHotel(pet.body.fecha_checkin, pet.body.fecha_checkout,
                 pet.body.tipo_habitacion, pet.body.cama_supletoria)
+
+            if (res.length > 0) {
+                var precio = res[0].precio //obtengo el primero
+                resp.status(200).json({ precio: precio, allOk: true })
+
+            } else
+                resp.status(200).json({ precio: -1, allOk: false })
+
+        }
+        catch (error) {
+            resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
+        }
+    })
+
+
+app.route('/hotel/reservaCoche')
+    .post(async (pet, resp) => {
+        try {
+            await reservarCoche(pet.body.reserva_id, pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
+
+            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+        }
+        catch (error) {
+            resp.status(500).json({ allOk: false })
+            console.log("ERROR: " + error)
+        }
+    })
+
+app.route('/coche/validar')
+    .get(async (pet, resp) => {
+        if (pet.body.fecha_recogida != null, pet.body.fecha_devolucion != null,
+            pet.body.lugar_recogida != null, pet.body.lugar_devolucion != null,
+            pet.body.tanque_lleno != null, pet.body.precio != null)
+
+            resp.status(200).json({ allOk: true })
+        else
+            resp.status(400).json({ allOk: false })
+    })
+
+app.route('/hotel/disponibilidad')
+    .get(async (pet, resp) => {
+        try {
+            const res = await comprobarCoche( pet.body.fecha_recogida, 
+                pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion,
+                 pet.body.tanque_lleno)
 
             if (res.length > 0) {
                 var precio = res[0].precio //obtengo el primero

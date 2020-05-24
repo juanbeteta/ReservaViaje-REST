@@ -45,7 +45,28 @@ exports.up = function (knex) {
             t.boolean('cama_supletoria');
             t.integer('precio');
             t.timestamps(true, true);
-        })
+        }),
+        knex.schema.createTable('reserva_coche', function (t) {
+            t.increments('id').unsigned().primary();
+            t.string('reserva_id', 100);
+            t.string('fecha_recogida', 100);
+            t.string('fecha_devolucion', 100);
+            t.string('lugar_recogida', 100);
+            t.string('lugar_devolucion', 100);
+            t.boolean('tanque_lleno');
+            t.integer('precio');
+            t.timestamps(true, true);
+        }),
+        knex.schema.createTable('coche', function (t) {
+            t.increments('id').unsigned().primary();
+            t.string('fecha_recogida', 100);
+            t.string('fecha_devolucion', 100);
+            t.string('lugar_recogida', 100);
+            t.string('lugar_devolucion', 100);
+            t.boolean('tanque_lleno');
+            t.integer('precio');
+            t.timestamps(true, true);
+        }),
     ]);
 };
 
