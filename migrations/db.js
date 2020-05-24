@@ -82,8 +82,10 @@ exports.down = function (knex) {
     return Promise.all([
         knex.schema.dropTable('login'),
         knex.schema.dropTable('reserva_avion'),
+        knex.schema.dropTable('reserva_coche'),
         knex.schema.dropTable('avion'),
         knex.schema.dropTable('hotel'),
+        knex.schema.dropTable('coche'),
         knex.schema.dropTable('reserva_hotel'),
         knex.schema.dropTable('reserva_viaje')
     ]);

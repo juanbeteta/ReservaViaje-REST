@@ -3,6 +3,7 @@ var express = require('express');
 var app = express();
 var cors = require('cors')
 var bp = require('body-parser');
+const pdf = require('html-pdf');
 app.use(cors())
 
 app.use(bp.json())
@@ -18,6 +19,8 @@ const knex = require('knex')({
     },
     useNullAsDefault: true
 });
+
+
 
 async function comprobarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno) {
     return await knex.raw(` select precio
@@ -107,15 +110,99 @@ async function reservarViaje(vuelo_id, hotel_id, coche_id, precio) {
         })
 }
 
-app.route('/reservaViaje')
-    .post( async (pet, resp)=> {
-        try {
-            await reservarViaje(pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
+async function getViaje(id){
+    return await knex.raw(` select * 
+                            from reserva_viaje
+                            where id=` + id);
+}
 
-            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+async function getReservas(vuelo_id, coche_id, hotel_id){
+    return await knex.raw(` select a.*, a.precio as precio_avion, c.*, c.precio as precio_coche, h.*, h.precio as precio_hotel
+                            from reserva_hotel h, reserva_coche c, reserva_avion a 
+                            where a.id=` + vuelo_id + ` and 
+                                  c.id=` + coche_id + ` and 
+                                  h.id=` + hotel_id
+                                 
+    );
+}
+
+app.route('/factura')
+    .get(async (pet, resp) => {
+        const res = await getViaje(pet.body.id) 
+        console.log(res)
+
+        if(res.length == 0)
+            resp.status(500).json({ allOk: false })
+        
+        var viajes = res[0]
+        const reservas = await getReservas(viajes.vuelo_id, viajes.coche_id, viajes.hotel_id)
+        //console.log(reservas)
+
+        var salida = reservas[0];
+        const content = `
+        <!doctype html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>PDF Result Template</title>
+            <style>
+                h1 {
+                    color: green;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Factura de la reserva</h1>
+            <b>Reserva Hotel</b>
+            <ul>
+                <li>Fecha checkin: ` + salida.fecha_checkin + `</li>
+                <li>Fecha checkout: ` + salida.fecha_checkout + `</li>
+                <li>Tipo habitacion: ` + salida.tipo_habitacion +`</li>
+                <li>Cama supletoria: ` + salida.cama_supletoria +`</li>
+                <li>Precio: ` + salida.precio_hotel + `€</li>
+            </ul>
+            <b>Reserva Avion</b>
+            <ul>
+                <li>Fecha recogida: ` + salida.fecha_recogida + `</li>
+                <li>Fecha devolucion: ` + salida.fecha_devolucion + `</li>
+                <li>Lugar recogida: ` + salida.lugar_recogida + `</li>
+                <li>Lugar devolucion: ` + salida.lugar_devolucion + `</li>
+                <li>Tanque lleno: ` + salida.tanque_lleno +`</li>
+                <li>Precio: ` + salida.precio_avion +`</li>
+            </ul>
+            <b>Reserva Coche</b>
+            <ul>
+                <li>Fecha ida: ` + salida.fecha_ida + ` </li>
+                <li>Fecja regreso: ` + salida.fecha_regreso+ `</li>
+                <li>Cantidad personas: ` + salida.cantidad_personas + ` </li>
+               
+                <li>Lugar de Destino: ` + salida.lugar_destino+ ` </li>
+                <li>Precio: ` + salida.precio_coche+ ` </li>
+            </ul>
+            <br>
+            <h2>PRECIO FINAL: ` + (salida.precio_avion + salida.precio_coche + salida.precio_hotel)+ `</h2>
+        </body>
+        </html>
+        `;
+        pdf.create(content).toFile('./html-pdf.pdf', function(err, res) {
+            if (err){
+                resp.status(500).json({ mensaje_error: err, allOk: false })
+            } else {
+                resp.status(200).json({ allOk: true })
+            }
+        });
+    })
+
+
+app.route('/reservaViaje')
+    .post(async (pet, resp) => {
+        try {
+            const codigo = await reservarViaje(pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
+
+            resp.status(200).json({ viaje_id: codigo,  precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
@@ -131,7 +218,7 @@ app.route('/usuario/verificar')
                 resp.status(400).json({ allOk: false })
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     });
@@ -139,12 +226,12 @@ app.route('/usuario/verificar')
 app.route('/avion/reservaAvion')
     .post(async (pet, resp) => {
         try {
-            await reservarAvion(pet.body.reserva_id, pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas, pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
+            const codigo = await reservarAvion(pet.body.reserva_id, pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas, pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
 
-            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ avion_id: codigo, precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
@@ -173,7 +260,7 @@ app.route('/avion/disponibilidad')
 
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
@@ -181,13 +268,13 @@ app.route('/avion/disponibilidad')
 app.route('/hotel/reservaHotel')
     .post(async (pet, resp) => {
         try {
-            await reservarHotel(pet.body.reserva_id, pet.body.fecha_checkin, pet.body.fecha_checkout,
+            const codigo = await reservarHotel(pet.body.reserva_id, pet.body.fecha_checkin, pet.body.fecha_checkout,
                 pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio)
 
-            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ hotel_id: codigo, precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
@@ -217,21 +304,21 @@ app.route('/hotel/disponibilidad')
 
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
 
 
-app.route('/hotel/reservaCoche')
+app.route('/coche/reservaCoche')
     .post(async (pet, resp) => {
         try {
-            await reservarCoche(pet.body.reserva_id, pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
+            const codigo = await reservarCoche(pet.body.reserva_id, pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
 
-            resp.status(200).json({ precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ coche_id: codigo, precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
@@ -250,9 +337,9 @@ app.route('/coche/validar')
 app.route('/hotel/disponibilidad')
     .get(async (pet, resp) => {
         try {
-            const res = await comprobarCoche( pet.body.fecha_recogida, 
+            const res = await comprobarCoche(pet.body.fecha_recogida,
                 pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion,
-                 pet.body.tanque_lleno)
+                pet.body.tanque_lleno)
 
             if (res.length > 0) {
                 var precio = res[0].precio //obtengo el primero
@@ -263,7 +350,7 @@ app.route('/hotel/disponibilidad')
 
         }
         catch (error) {
-            resp.status(500).json({ allOk: false })
+            resp.status(500).json({ mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
