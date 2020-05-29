@@ -70,6 +70,7 @@ exports.up = function (knex) {
         }),
         knex.schema.createTable('reserva_viaje', function (t) {
             t.increments('id').unsigned().primary(); //vuelo_id, hotel_id, coche_id, precio
+            t.string('usuario', 100);
             t.integer('vuelo_id');
             t.integer('hotel_id');
             t.integer('coche_id');

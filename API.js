@@ -100,9 +100,10 @@ async function reservarCoche(reserva_id, fecha_recogida, fecha_devolucion, lugar
         })
 }
 
-async function reservarViaje(vuelo_id, hotel_id, coche_id, precio) {
+async function reservarViaje(usuario, vuelo_id, hotel_id, coche_id, precio) {
     return await knex('reserva_viaje')
         .insert({
+            usuario: usuario,
             vuelo_id: vuelo_id,
             hotel_id: hotel_id,
             coche_id: coche_id,
@@ -128,8 +129,9 @@ async function getReservas(vuelo_id, coche_id, hotel_id) {
 
 app.route('/factura')
     .get(async (pet, resp) => {
-        const res = await getViaje(pet.body.id)
-        console.log(res)
+        //console.log(pet.headers.id)
+        const res = await getViaje(pet.headers['id'])
+        //console.log(res)
 
         if (res.length == 0)
             resp.status(500).json({ allOk: false })
@@ -217,10 +219,11 @@ app.route('/error')
 
 app.route('/reservaViaje')
     .post(async (pet, resp) => {
+        console.log(pet.body)
         try {
-            const codigo = await reservarViaje(pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
+            const codigo = await reservarViaje(pet.body.usuario, pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
 
-            resp.status(200).json({ viaje_id: codigo, precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ viaje_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
         catch (error) {
             resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
@@ -256,7 +259,15 @@ app.route('/avion/descuento')
     });
 app.route('/hotel/descuento')
     .get((pet, resp) => {
-        
+
+        var precio = pet.headers['precio']
+        var descuento = precio - (precio * 25 / 100)
+
+        resp.status(200).json({ descuento: descuento })
+    });
+
+app.route('/coche/descuento')
+    .get((pet, resp) => {
         var precio = pet.headers['precio']
         var descuento = precio - (precio * 25 / 100)
 
@@ -359,7 +370,7 @@ app.route('/coche/reservaCoche')
         try {
             const codigo = await reservarCoche(pet.body.reserva_id, pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
 
-            resp.status(200).json({ coche_id: codigo, precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ coche_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
         catch (error) {
             resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
@@ -380,7 +391,7 @@ app.route('/coche/validar')
 
 app.route('/coche/disponibilidad')
     .post(async (pet, resp) => {
-        console.log(pet.body)
+
         try {
             const res = await comprobarCoche(pet.body.fecha_recogida,
                 pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion,
