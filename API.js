@@ -110,30 +110,30 @@ async function reservarViaje(vuelo_id, hotel_id, coche_id, precio) {
         })
 }
 
-async function getViaje(id){
+async function getViaje(id) {
     return await knex.raw(` select * 
                             from reserva_viaje
                             where id=` + id);
 }
 
-async function getReservas(vuelo_id, coche_id, hotel_id){
+async function getReservas(vuelo_id, coche_id, hotel_id) {
     return await knex.raw(` select a.*, a.precio as precio_avion, c.*, c.precio as precio_coche, h.*, h.precio as precio_hotel
                             from reserva_hotel h, reserva_coche c, reserva_avion a 
                             where a.id=` + vuelo_id + ` and 
                                   c.id=` + coche_id + ` and 
                                   h.id=` + hotel_id
-                                 
+
     );
 }
 
 app.route('/factura')
     .get(async (pet, resp) => {
-        const res = await getViaje(pet.body.id) 
+        const res = await getViaje(pet.body.id)
         console.log(res)
 
-        if(res.length == 0)
+        if (res.length == 0)
             resp.status(500).json({ allOk: false })
-        
+
         var viajes = res[0]
         const reservas = await getReservas(viajes.vuelo_id, viajes.coche_id, viajes.hotel_id)
         //console.log(reservas)
@@ -157,8 +157,8 @@ app.route('/factura')
             <ul>
                 <li>Fecha checkin: ` + salida.fecha_checkin + `</li>
                 <li>Fecha checkout: ` + salida.fecha_checkout + `</li>
-                <li>Tipo habitacion: ` + salida.tipo_habitacion +`</li>
-                <li>Cama supletoria: ` + salida.cama_supletoria +`</li>
+                <li>Tipo habitacion: ` + salida.tipo_habitacion + `</li>
+                <li>Cama supletoria: ` + salida.cama_supletoria + `</li>
                 <li>Precio: ` + salida.precio_hotel + `€</li>
             </ul>
             <b>Reserva Avion</b>
@@ -167,25 +167,25 @@ app.route('/factura')
                 <li>Fecha devolucion: ` + salida.fecha_devolucion + `</li>
                 <li>Lugar recogida: ` + salida.lugar_recogida + `</li>
                 <li>Lugar devolucion: ` + salida.lugar_devolucion + `</li>
-                <li>Tanque lleno: ` + salida.tanque_lleno +`</li>
-                <li>Precio: ` + salida.precio_avion +`</li>
+                <li>Tanque lleno: ` + salida.tanque_lleno + `</li>
+                <li>Precio: ` + salida.precio_avion + `</li>
             </ul>
             <b>Reserva Coche</b>
             <ul>
                 <li>Fecha ida: ` + salida.fecha_ida + ` </li>
-                <li>Fecja regreso: ` + salida.fecha_regreso+ `</li>
+                <li>Fecja regreso: ` + salida.fecha_regreso + `</li>
                 <li>Cantidad personas: ` + salida.cantidad_personas + ` </li>
                
-                <li>Lugar de Destino: ` + salida.lugar_destino+ ` </li>
-                <li>Precio: ` + salida.precio_coche+ ` </li>
+                <li>Lugar de Destino: ` + salida.lugar_destino + ` </li>
+                <li>Precio: ` + salida.precio_coche + ` </li>
             </ul>
             <br>
-            <h2>PRECIO FINAL: ` + (salida.precio_avion + salida.precio_coche + salida.precio_hotel)+ `</h2>
+            <h2>PRECIO FINAL: ` + (salida.precio_avion + salida.precio_coche + salida.precio_hotel) + `</h2>
         </body>
         </html>
         `;
-        pdf.create(content).toFile('./html-pdf.pdf', function(err, res) {
-            if (err){
+        pdf.create(content).toFile('./html-pdf.pdf', function (err, res) {
+            if (err) {
                 resp.status(500).json({ mensaje_error: err, allOk: false })
             } else {
                 resp.status(200).json({ allOk: true })
@@ -194,28 +194,50 @@ app.route('/factura')
     })
 
 
+app.route('/error')
+    .get((pet, resp) => {
+        code = pet.headers['codigo']
+        switch (code) {
+            case '400':
+                resp.send("Petición incorrecta")
+                break
+            case '401':
+                resp.send("Usuario no autorizado")
+                break
+            case '404':
+                resp.send("Recurso no encontrado")
+                break
+            case '500':
+                resp.send("Error interno del servidor, intente de nuevo")
+                break
+            default:
+                resp.send("Error desconocido")
+        }
+    })
+
 app.route('/reservaViaje')
     .post(async (pet, resp) => {
         try {
             const codigo = await reservarViaje(pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
 
-            resp.status(200).json({ viaje_id: codigo,  precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ viaje_id: codigo, precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ mensaje_error: error, allOk: false })
+            resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
 
 app.route('/usuario/verificar')
-    .get(async (pet, resp) => {
+    .post(async (pet, resp) => {
+        //console.log(pet.body)
         try {
             const verificar = await verificarUsuario(pet.body.usuario, pet.body.password)
 
             if (verificar.length > 0)
-                resp.status(200).json({ allOk: true })
+                resp.status(200).json({ allOk: true, descuento: verificar[0].descuento })
             else
-                resp.status(400).json({ allOk: false })
+                resp.status(200).json({ allOk: false })
         }
         catch (error) {
             resp.status(500).json({ mensaje_error: error, allOk: false })
@@ -223,31 +245,53 @@ app.route('/usuario/verificar')
         }
     });
 
+
+app.route('/avion/descuento')
+    .get((pet, resp) => {
+
+        var precio = pet.headers['precio']
+        var descuento = precio - (precio * 25 / 100)
+
+        resp.status(200).json({ descuento: descuento })
+    });
+app.route('/hotel/descuento')
+    .get((pet, resp) => {
+        
+        var precio = pet.headers['precio']
+        var descuento = precio - (precio * 25 / 100)
+
+        resp.status(200).json({ descuento: descuento })
+    });
 app.route('/avion/reservaAvion')
     .post(async (pet, resp) => {
+        //console.log(pet.body)
         try {
-            const codigo = await reservarAvion(pet.body.reserva_id, pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas, pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
+            const codigo = await reservarAvion(pet.body.reserva_id,
+                pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas,
+                pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
 
-            resp.status(200).json({ avion_id: codigo, precio: pet.body.precio, allOk: true })
+
+            resp.status(200).json({ avion_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ mensaje_error: error, allOk: false })
+            resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
 
 app.route('/avion/validar')
-    .get(async (pet, resp) => {
-        if (pet.body.reserva_id != null && pet.body.fecha_ida != null && pet.body.fecha_regreso != null &&
-            pet.body.cantidad_personas > 0 && pet.body.lugar_ogigen != null && pet.body.lugar_destino != null && pet.body.precio > 0)
+    .post(async (pet, resp) => {
+        // console.log(pet.body)
+        if (pet.body.reserva_id != null && pet.body.fecha_ida != null && pet.body.fecha_regreso != null)
 
             resp.status(200).json({ allOk: true })
         else
-            resp.status(400).json({ allOk: false })
+            resp.status(400).json({ codigo: 400, mensaje_error: "Error al validar los datos para la reserva del avion", allOk: false })
     })
 
 app.route('/avion/disponibilidad')
-    .get(async (pet, resp) => {
+    .post(async (pet, resp) => {
+        //console.log(pet.body)
         try {
             const res = await comprobarVuelo(pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.lugar_origen, pet.body.lugar_destino)
 
@@ -256,7 +300,7 @@ app.route('/avion/disponibilidad')
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else
-                resp.status(200).json({ precio: -1, allOk: false })
+                resp.status(400).json({ codigo: 400, precio: -1, allOk: false })
 
         }
         catch (error) {
@@ -271,27 +315,27 @@ app.route('/hotel/reservaHotel')
             const codigo = await reservarHotel(pet.body.reserva_id, pet.body.fecha_checkin, pet.body.fecha_checkout,
                 pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio)
 
-            resp.status(200).json({ hotel_id: codigo, precio: pet.body.precio, allOk: true })
+            resp.status(200).json({ hotel_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ mensaje_error: error, allOk: false })
+            resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
 
 app.route('/hotel/validar')
-    .get(async (pet, resp) => {
-        if (pet.body.reserva_id != null && pet.body.fecha_checkin != null &&
-            pet.body.fecha_checkout != null && pet.body.tipo_habitacion > 0 && pet.body.precio > 0)
+    .post(async (pet, resp) => {
+        if (pet.body.fecha_checkin != null && pet.body.fecha_checkout != null)
 
             resp.status(200).json({ allOk: true })
         else
-            resp.status(400).json({ allOk: false })
+            resp.status(400).json({ codigo: 400, allOk: false })
     })
 
 app.route('/hotel/disponibilidad')
-    .get(async (pet, resp) => {
+    .post(async (pet, resp) => {
         try {
+            //console.log(pet.body)
             const res = await comprobarHotel(pet.body.fecha_checkin, pet.body.fecha_checkout,
                 pet.body.tipo_habitacion, pet.body.cama_supletoria)
 
@@ -300,7 +344,7 @@ app.route('/hotel/disponibilidad')
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else
-                resp.status(200).json({ precio: -1, allOk: false })
+                resp.status(400).json({ codigo: 400, precio: -1, allOk: false })
 
         }
         catch (error) {
@@ -318,24 +362,25 @@ app.route('/coche/reservaCoche')
             resp.status(200).json({ coche_id: codigo, precio: pet.body.precio, allOk: true })
         }
         catch (error) {
-            resp.status(500).json({ mensaje_error: error, allOk: false })
+            resp.status(500).json({ codigo: 500, mensaje_error: error, allOk: false })
             console.log("ERROR: " + error)
         }
     })
 
 app.route('/coche/validar')
-    .get(async (pet, resp) => {
+    .post(async (pet, resp) => {
+        //console.log(pet.body)
         if (pet.body.fecha_recogida != null, pet.body.fecha_devolucion != null,
-            pet.body.lugar_recogida != null, pet.body.lugar_devolucion != null,
-            pet.body.tanque_lleno != null, pet.body.precio != null)
+            pet.body.lugar_recogida != null, pet.body.lugar_devolucion != null)
 
             resp.status(200).json({ allOk: true })
         else
-            resp.status(400).json({ allOk: false })
+            resp.status(400).json({ codigo: 400, allOk: false })
     })
 
-app.route('/hotel/disponibilidad')
-    .get(async (pet, resp) => {
+app.route('/coche/disponibilidad')
+    .post(async (pet, resp) => {
+        console.log(pet.body)
         try {
             const res = await comprobarCoche(pet.body.fecha_recogida,
                 pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion,
@@ -346,7 +391,7 @@ app.route('/hotel/disponibilidad')
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else
-                resp.status(200).json({ precio: -1, allOk: false })
+                resp.status(400).json({ codigo: 400, precio: -1, allOk: false })
 
         }
         catch (error) {

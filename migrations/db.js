@@ -4,6 +4,7 @@ exports.up = function (knex) {
             t.increments('id').unsigned().primary();
             t.string('usuario', 100);
             t.string('password', 100);
+            t.boolean('descuento');
             t.timestamps(true, true);
         }),
         knex.schema.createTable('reserva_avion', function (t) {

@@ -2,17 +2,20 @@
  
  const createLogin1 = () =>({
     usuario: 'Juan',
-    password: 'Juan'
+    password: 'Juan',
+    descuento: false
  })
  
  const createLogin2 = () =>({
     usuario: 'Juan1',
-    password: 'Juan1'
+    password: 'Juan1',
+    descuento: false
  })
  
  const createLogin3 = () =>({
     usuario: 'Juan2',
-    password: 'Juan2'
+    password: 'Juan2',
+    descuento: true
  })
  
  exports.seed = async function (knex, Promise) {
