@@ -4,6 +4,7 @@ var app = express();
 var cors = require('cors')
 var bp = require('body-parser');
 const pdf = require('html-pdf');
+const nodemailer = require('nodemailer')
 app.use(cors())
 
 app.use(bp.json())
@@ -20,7 +21,16 @@ const knex = require('knex')({
     useNullAsDefault: true
 });
 
-
+// create reusable transporter object using the default SMTP transport
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: 'sendermtis@gmail.com',
+        pass: 'mtissender2020',
+    },
+});
 
 async function comprobarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno) {
     return await knex.raw(` select precio
@@ -196,9 +206,26 @@ app.route('/factura')
     })
 
 
-app.route('/error')
+app.route('/notificacion/email')
+    .post((pet, resp) => {
+        //maybe give more info from the database in the mail?
+        let message = {
+            from: 'Reservas MTIS',
+            to: pet.body.email,
+            subject: 'Reserva de viaje realizada ✔',
+            text: `Buenos días, ha reservado correctamente el viaje con identificador número ${pet.body.idReserva}, gracias por confiar en nosotros`,
+        };
+
+        transporter.sendMail(message, (err, info) => {
+            if (err) {
+                return res.status(500)
+            }
+            res.status(200).send(true);
+        })
+    })
+app.route('/notificacion/error')
     .get((pet, resp) => {
-        code = pet.headers['codigo']
+        code = pet.query.codigo
         switch (code) {
             case '400':
                 resp.send("Petición incorrecta")
@@ -247,7 +274,6 @@ app.route('/usuario/verificar')
             console.log("ERROR: " + error)
         }
     });
-
 
 app.route('/avion/descuento')
     .get((pet, resp) => {
