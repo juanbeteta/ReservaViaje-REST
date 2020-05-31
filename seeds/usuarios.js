@@ -1,7 +1,7 @@
  const usuarios = [];
  
  const createLogin1 = () =>({
-    usuario: 'Juan',
+    usuario: 'ecb34@gcloud.ua.es',
     password: 'Juan',
     descuento: false
  })

@@ -208,20 +208,23 @@ app.route('/factura')
 
 app.route('/notificacion/email')
     .post((pet, resp) => {
+        console.log(pet.body)
         //maybe give more info from the database in the mail?
         let message = {
             from: 'Reservas MTIS',
-            to: pet.body.email,
+            to: 'ecb34@gcloud.ua.es',
             subject: 'Reserva de viaje realizada ✔',
             text: `Buenos días, ha reservado correctamente el viaje con identificador número ${pet.body.idReserva}, gracias por confiar en nosotros`,
         };
-
+        console.log('enviando email')
         transporter.sendMail(message, (err, info) => {
             if (err) {
-                return res.status(500)
+                console.log('ERROR '+ err.message)
+                return resp.status(500).send()
             }
-            res.status(200).send(true);
+            resp.status(200).send(true);
         })
+        
     })
 app.route('/notificacion/error')
     .get((pet, resp) => {
