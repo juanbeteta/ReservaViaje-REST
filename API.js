@@ -140,7 +140,7 @@ async function getReservas(vuelo_id, coche_id, hotel_id) {
 app.route('/factura')
     .get(async (pet, resp) => {
         //console.log(pet.headers.id)
-        const res = await getViaje(pet.headers['id'])
+        const res = await getViaje(pet.query.id)
         //console.log(res)
 
         if (res.length == 0)
