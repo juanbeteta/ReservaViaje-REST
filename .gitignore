@@ -2,4 +2,3 @@ node_modules/
 .idea/workspace.xml
 
 .idea/
-dev.sqlite3
