@@ -20,6 +20,7 @@ exports.up = function (knex) {
         }),
         knex.schema.createTable('avion', function (t) {
             t.increments('id').unsigned().primary();
+            t.string('nombre', 100);
             t.string('fecha_ida', 100);
             t.string('fecha_regreso', 100);
             t.integer('cantidad_personas');
@@ -40,6 +41,7 @@ exports.up = function (knex) {
         }),
         knex.schema.createTable('hotel', function (t) {
             t.increments('id').unsigned().primary();
+            t.string('nombre', 100);
             t.string('fecha_checkin', 100);
             t.string('fecha_checkout', 100);
             t.string('tipo_habitacion', 100);
@@ -60,6 +62,7 @@ exports.up = function (knex) {
         }),
         knex.schema.createTable('coche', function (t) {
             t.increments('id').unsigned().primary();
+            t.string('nombre', 100);
             t.string('fecha_recogida', 100);
             t.string('fecha_devolucion', 100);
             t.string('lugar_recogida', 100);

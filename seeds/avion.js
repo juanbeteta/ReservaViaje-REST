@@ -1,6 +1,7 @@
 const vuelos = [];
 
 const vuelo1 = () => ({
+   nombre: "american airland",
    fecha_ida: "10-10-10",
    fecha_regreso: "11-10-10",
    cantidad_personas: 100,
@@ -10,6 +11,7 @@ const vuelo1 = () => ({
 })
 
 const vuelo2 = () => ({
+   nombre: "avion kamikase",
    fecha_ida: "21-10-10",
    fecha_regreso: "22-10-10",
    cantidad_personas: 100,
@@ -19,6 +21,7 @@ const vuelo2 = () => ({
 })
 
 const vuelo3 = () => ({
+   nombre: "allahu akbar",
    fecha_ida: "10-10-10",
    fecha_regreso: "11-10-10",
    cantidad_personas: 100,
