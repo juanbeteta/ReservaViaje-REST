@@ -207,7 +207,8 @@ app.route('/factura')
 
 
 app.route('/notificacion/email')
-    .post((pet, resp) => {
+    .post((pet, res) => {
+        console.log(pet.body)
         //maybe give more info from the database in the mail?
         let message = {
             from: 'Reservas MTIS',
@@ -246,7 +247,7 @@ app.route('/notificacion/error')
 
 app.route('/reservaViaje')
     .post(async (pet, resp) => {
-        console.log(pet.body)
+        //console.log(pet.body)
         try {
             const codigo = await reservarViaje(pet.body.usuario, pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
 
@@ -303,10 +304,10 @@ app.route('/avion/reservaAvion')
     .post(async (pet, resp) => {
         //console.log(pet.body)
         try {
-            const codigo = await reservarAvion(pet.body.reserva_id,
+            const codigo = await reservarAvion(
                 pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas,
                 pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
-
+                console.log(codigo)
 
             resp.status(200).json({ avion_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
@@ -319,7 +320,7 @@ app.route('/avion/reservaAvion')
 app.route('/avion/validar')
     .post(async (pet, resp) => {
         // console.log(pet.body)
-        if (pet.body.reserva_id != null && pet.body.fecha_ida != null && pet.body.fecha_regreso != null)
+        if (pet.body.fecha_ida != null && pet.body.fecha_regreso != null)
 
             resp.status(200).json({ allOk: true })
         else
@@ -349,7 +350,7 @@ app.route('/avion/disponibilidad')
 app.route('/hotel/reservaHotel')
     .post(async (pet, resp) => {
         try {
-            const codigo = await reservarHotel(pet.body.reserva_id, pet.body.fecha_checkin, pet.body.fecha_checkout,
+            const codigo = await reservarHotel(pet.body.fecha_checkin, pet.body.fecha_checkout,
                 pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio)
 
             resp.status(200).json({ hotel_id: codigo[0], precio: pet.body.precio, allOk: true })
@@ -394,7 +395,7 @@ app.route('/hotel/disponibilidad')
 app.route('/coche/reservaCoche')
     .post(async (pet, resp) => {
         try {
-            const codigo = await reservarCoche(pet.body.reserva_id, pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
+            const codigo = await reservarCoche( pet.body.fecha_recogida, pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion, pet.body.tanque_lleno, pet.body.precio)
 
             resp.status(200).json({ coche_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
