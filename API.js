@@ -28,18 +28,17 @@ const transporter = nodemailer.createTransport({
     secure: false,
     auth: {
         user: 'sendermtis@gmail.com',
-        pass: 'mtissender2020',
+        pass: 'mtissender2019',
     },
 });
 
-async function comprobarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno) {
+async function comprobarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion) {
     return await knex.raw(` select precio
                             from coche 
                             where fecha_recogida="` + fecha_recogida + `" and 
                                   fecha_devolucion="` + fecha_devolucion + `" and 
                                   lugar_recogida="` + lugar_recogida + `" and 
-                                  lugar_devolucion="` + lugar_devolucion + `" and 
-                                  tanque_lleno=` + tanque_lleno
+                                  lugar_devolucion="` + lugar_devolucion + `"`
     );
 }
 
@@ -54,13 +53,12 @@ async function comprobarVuelo(fecha_ida, fecha_regreso, lugar_origen, lugar_dest
 }
 
 // pet.body.fecha_checkin, pet.body.fecha_checkout, pet.body.tipo_habitacion, pet.body.cama_supletoria, pet.body.precio
-async function comprobarHotel(fecha_checkin, fecha_checkout, tipo_habitacion, cama_supletoria) {
+async function comprobarHotel(fecha_checkin, fecha_checkout, tipo_habitacion) {
     return await knex.raw(` select precio
                             from hotel 
                             where fecha_checkin="` + fecha_checkin + `" and 
                                   fecha_checkout="` + fecha_checkout + `" and 
-                                  tipo_habitacion="` + tipo_habitacion + `" and 
-                                  cama_supletoria=` + cama_supletoria
+                                  tipo_habitacion="` + tipo_habitacion + `"`
     );
 }
 
@@ -71,10 +69,9 @@ async function verificarUsuario(usuario, password) {
     );
 }
 
-async function reservarAvion(reserva_id, fecha_ida, fecha_regreso, cantidad_personas, lugar_origen, lugar_destino, precio) {
+async function reservarAvion(fecha_ida, fecha_regreso, cantidad_personas, lugar_origen, lugar_destino, precio) {
     return await knex('reserva_avion')
         .insert({
-            reserva_id: reserva_id,
             fecha_ida: fecha_ida,
             fecha_regreso: fecha_regreso,
             cantidad_personas: cantidad_personas,
@@ -82,13 +79,11 @@ async function reservarAvion(reserva_id, fecha_ida, fecha_regreso, cantidad_pers
             lugar_destino: lugar_destino,
             precio: precio
         })
-    //.returning('id')
 }
 
-async function reservarHotel(reserva_id, fecha_checkin, fecha_checkout, tipo_habitacion, cama_supletoria, precio) {
+async function reservarHotel(fecha_checkin, fecha_checkout, tipo_habitacion, cama_supletoria, precio) {
     return await knex('reserva_hotel')
         .insert({
-            reserva_id: reserva_id,
             fecha_checkin: fecha_checkin,
             fecha_checkout: fecha_checkout,
             tipo_habitacion: tipo_habitacion,
@@ -97,10 +92,9 @@ async function reservarHotel(reserva_id, fecha_checkin, fecha_checkout, tipo_hab
         })
 }
 
-async function reservarCoche(reserva_id, fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno, precio) {
+async function reservarCoche(fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno, precio) {
     return await knex('reserva_coche')
         .insert({
-            reserva_id: reserva_id,
             fecha_recogida: fecha_recogida,
             fecha_devolucion: fecha_devolucion,
             lugar_recogida: lugar_recogida,
@@ -126,11 +120,6 @@ async function getVuelos() {
                             from avion`);
 }
 
-async function getHoteles() {
-    return await knex.raw(` select *
-                            from hotel`);
-}
-
 async function getCoches() {
     return await knex.raw(` select *
                             from coche`);
@@ -152,39 +141,78 @@ async function getReservas(vuelo_id, coche_id, hotel_id) {
     );
 }
 
-app.route('/avion/getAvion')
-    .get(async (pet, resp) => {
-        const res = await getVuelos()
-        resp.status(200).json({ res })
 
+/*
+app.route('/avion/origenes')
+    .get(async (req, res) => {
+        try{
+            const rows = await knex.raw(`select lugar_origen from avion where fecha_ida = "${req.query.fecha}"`);
+            console.log(rows)
+            return res.status(200).send(rows);
+        }catch(err){
+            console.log(err)
+            return res.status(200)
+        }
     })
 
+app.route('/avion/destinos')
+    .get(async (req, res) => {
+        try{
+            const rows = await knex.raw(`select lugar_destino from avion where fecha_regreso = "${req.query.fecha}"`);
+            return res.status(200).send(rows);
+        }catch(err){
+            console.log(err)
+            return res.status(200)
+        }
+    })*/
+app.route('/avion/getAvion')
+    .get(async (req, res) => {
+        try{
+            const rows = await knex.raw(`select * from avion where fecha_ida = "${req.query.ida}" and fecha_regreso = "${req.query.vuelta}"`);
+            console.log(rows)
+            return res.status(200).send(rows);
+        }catch(err){
+            console.log(err)
+            return res.status(400)
+        }
+    })
+
+app.route('/coche/recogidas')
+    .get(async (req, res) => {
+        try{
+            const rows = await knex.raw(`select lugar_origen from coche where lugar_recogida = "${req.query.fecha}"`);
+            console.log(rows)
+            return res.status(200).send(rows);
+        }catch(err){
+            console.log(err)
+            return res.status(200)
+        }
+    })
+
+
 app.route('/hotel/getHotel')
-    .get(async (pet, resp) => {
-        const res = await getHoteles()
-        resp.status(200).json({ res })
+    .get(async (req, res) => {
+        const response = await knex.raw(`select * from hotel where fecha_checkin = "${req.query.checkin}" and fecha_checkout = "${req.query.checkout}"`)
+        res.status(200).send(response)
 
     })
 
 app.route('/coche/getCoche')
-    .get(async (pet, resp) => {
-        const res = await getCoches()
-        resp.status(200).json({ res })
+    .get(async (req, res) => {
+        const response = await knex.raw(`select * from coche where fecha_recogida = "${req.query.recogida}" and fecha_devolucion = "${req.query.devolucion}"`)
+        res.status(200).send(response)
 
     })
 
 app.route('/factura')
     .get(async (pet, resp) => {
-        //console.log(pet.headers.id)
         const res = await getViaje(pet.query.id)
-        //console.log(res)
 
         if (res.length == 0)
             resp.status(500).json({ allOk: false })
 
         var viajes = res[0]
         const reservas = await getReservas(viajes.vuelo_id, viajes.coche_id, viajes.hotel_id)
-        //console.log(reservas)
 
         var salida = reservas[0];
         const content = `
@@ -195,7 +223,7 @@ app.route('/factura')
             <title>PDF Result Template</title>
             <style>
                 h1 {
-                    color: green;
+                    color: blue;
                 }
             </style>
         </head>
@@ -232,7 +260,7 @@ app.route('/factura')
         </body>
         </html>
         `;
-        pdf.create(content).toFile('./html-pdf.pdf', function (err, res) {
+        pdf.create(content).toFile(`./reserva_${pet.query.id}.pdf`, function (err, res) {
             if (err) {
                 resp.status(500).json({ mensaje_error: err, allOk: false })
             } else {
@@ -248,9 +276,15 @@ app.route('/notificacion/email')
         //maybe give more info from the database in the mail?
         let message = {
             from: 'Reservas MTIS',
-            to: 'bttajuan@gmail.com',
+            to: pet.body.email,
             subject: 'Reserva de viaje realizada ✔',
-            text: `Buenos días, ha reservado correctamente el viaje con identificador número ${pet.body.idReserva}, gracias por confiar en nosotros`,
+            attachments: [
+                {
+                    filename: 'Reserva.pdf',
+                    path: `./reserva_${pet.body.idReserva}.pdf`
+                }
+            ],
+            html: `Buenos días, ha reservado correctamente el viaje con identificador número ${pet.body.idReserva},le adjuntamos su reserva <br> Gracias por confiar en nosotros`,
         };
         console.log('enviando email')
         transporter.sendMail(message, (err, info) => {
@@ -258,6 +292,7 @@ app.route('/notificacion/email')
                 console.log('ERROR ' + err.message)
                 return res.status(500).send()
             }
+            console.log('enviado')
             res.status(200).send(true);
         })
 
@@ -285,7 +320,6 @@ app.route('/notificacion/error')
 
 app.route('/reservaViaje')
     .post(async (pet, resp) => {
-        //console.log(pet.body)
         try {
             const codigo = await reservarViaje(pet.body.usuario, pet.body.vuelo_id, pet.body.hotel_id, pet.body.coche_id, pet.body.precio)
 
@@ -299,8 +333,7 @@ app.route('/reservaViaje')
 
 app.route('/usuario/verificar')
     .post(async (pet, resp) => {
-        //console.log(pet.body)
-        try {
+        try {   
             const verificar = await verificarUsuario(pet.body.usuario, pet.body.password)
 
             if (verificar.length > 0)
@@ -344,7 +377,7 @@ app.route('/avion/reservaAvion')
         try {
             const codigo = await reservarAvion(
                 pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas,
-                pet.body.lugar_ogigen, pet.body.lugar_destino, pet.body.precio)
+                pet.body.lugar_origen, pet.body.lugar_destino, pet.body.precio)
             console.log(codigo)
 
             resp.status(200).json({ avion_id: codigo[0], precio: pet.body.precio, allOk: true })
@@ -357,7 +390,6 @@ app.route('/avion/reservaAvion')
 
 app.route('/avion/validar')
     .post(async (pet, resp) => {
-        // console.log(pet.body)
         if (pet.body.fecha_ida != null && pet.body.fecha_regreso != null)
 
             resp.status(200).json({ allOk: true })
@@ -367,7 +399,6 @@ app.route('/avion/validar')
 
 app.route('/avion/disponibilidad')
     .post(async (pet, resp) => {
-        //console.log(pet.body)
         try {
             const res = await comprobarVuelo(pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.lugar_origen, pet.body.lugar_destino)
 
@@ -413,10 +444,13 @@ app.route('/hotel/disponibilidad')
         try {
             console.log(pet.body)
             const res = await comprobarHotel(pet.body.fecha_checkin, pet.body.fecha_checkout,
-                pet.body.tipo_habitacion, pet.body.cama_supletoria)
+                pet.body.tipo_habitacion)
 
             if (res.length > 0) {
                 var precio = res[0].precio //obtengo el primero
+                if(pet.body.cama_supletoria){
+                    precio += 20
+                }
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else
@@ -445,7 +479,6 @@ app.route('/coche/reservaCoche')
 
 app.route('/coche/validar')
     .post(async (pet, resp) => {
-        //console.log(pet.body)
         if (pet.body.fecha_recogida != null, pet.body.fecha_devolucion != null,
             pet.body.lugar_recogida != null, pet.body.lugar_devolucion != null)
 
@@ -460,10 +493,13 @@ app.route('/coche/disponibilidad')
         try {
             const res = await comprobarCoche(pet.body.fecha_recogida,
                 pet.body.fecha_devolucion, pet.body.lugar_recogida, pet.body.lugar_devolucion,
-                pet.body.tanque_lleno)
+                )
 
             if (res.length > 0) {
                 var precio = res[0].precio //obtengo el primero
+                if(pet.body.tanque_lleno){
+                    precio += 40
+                }
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else

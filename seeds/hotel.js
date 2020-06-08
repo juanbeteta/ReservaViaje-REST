@@ -2,8 +2,8 @@ const hotel = [];
 
 const res1 = () => ({
    nombre: "hotel1",
-   fecha_checkin: "10-10-10",
-   fecha_checkout: "11-10-10",
+   fecha_checkin: "2020-10-10",
+   fecha_checkout: "2020-10-10",
    tipo_habitacion: "doble cama",
    cama_supletoria: true,
    precio: 200
@@ -11,8 +11,8 @@ const res1 = () => ({
 
 const res2 = () => ({
    nombre: "D'Angelo",
-   fecha_checkin: "11-10-10",
-   fecha_checkout: "14-10-10",
+   fecha_checkin: "2020-10-10",
+   fecha_checkout: "2020-10-10",
    tipo_habitacion: "doble cama",
    cama_supletoria: true,
    precio: 100
@@ -20,8 +20,8 @@ const res2 = () => ({
 
 const res3 = () => ({
    nombre: "El encuentro",
-   fecha_checkin: "12-10-10",
-   fecha_checkout: "15-10-10",
+   fecha_checkin: "2020-10-10",
+   fecha_checkout: "2020-10-10",
    tipo_habitacion: "doble cama",
    cama_supletoria: true,
    precio: 300

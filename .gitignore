@@ -4,3 +4,5 @@ node_modules/
 .idea/
 
 dev.sqlite3
+
+*.pdf
