@@ -215,51 +215,51 @@ app.route('/factura')
         const reservas = await getReservas(viajes.vuelo_id, viajes.coche_id, viajes.hotel_id)
 
         var salida = reservas[0];
+        const textCamaSupletoria = salida.cama_supletoria ? 'SI' : 'NO'
+        const textTanqueLleno = salida.tanque_lleno ? 'SI' : 'NO'
         const content = `
         <!doctype html>
         <html>
         <head>
             <meta charset="utf-8">
-            <title>PDF Result Template</title>
-            <style>
-                h1 {
-                    color: blue;
-                }
-            </style>
+            <title>Factura</title>
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         </head>
-        <body>
+        <body class="bg-primary">
+            <div class="container text-white" style="margin-left:20%">
             <h1>Factura de la reserva</h1>
-            <b>Reserva Hotel</b>
+            <h3 >Reserva Hotel</h3>
             <ul>
                 <li>Fecha checkin: ` + salida.fecha_checkin + `</li>
                 <li>Fecha checkout: ` + salida.fecha_checkout + `</li>
                 <li>Tipo habitacion: ` + salida.tipo_habitacion + `</li>
-                <li>Cama supletoria: ` + salida.cama_supletoria + `</li>
+                <li>Cama supletoria: ` + textCamaSupletoria + `</li>
                 <li>Precio: ` + salida.precio_hotel + `€</li>
             </ul>
-            <b>Reserva Avion</b>
+            <h3>Reserva Avion</h3>
             <ul>
                 <li>Fecha recogida: ` + salida.fecha_recogida + `</li>
                 <li>Fecha devolucion: ` + salida.fecha_devolucion + `</li>
                 <li>Lugar recogida: ` + salida.lugar_recogida + `</li>
                 <li>Lugar devolucion: ` + salida.lugar_devolucion + `</li>
-                <li>Tanque lleno: ` + salida.tanque_lleno + `</li>
-                <li>Precio: ` + salida.precio_avion + `</li>
+                <li>Tanque lleno: ` + textTanqueLleno + `</li>
+                <li>Precio: ` + salida.precio_avion + `€</li>
             </ul>
-            <b>Reserva Coche</b>
+            <h3>Reserva Coche</h3>
             <ul>
                 <li>Fecha ida: ` + salida.fecha_ida + ` </li>
-                <li>Fecja regreso: ` + salida.fecha_regreso + `</li>
+                <li>Fecha regreso: ` + salida.fecha_regreso + `</li>
                 <li>Cantidad personas: ` + salida.cantidad_personas + ` </li>
-               
                 <li>Lugar de Destino: ` + salida.lugar_destino + ` </li>
-                <li>Precio: ` + salida.precio_coche + ` </li>
+                <li>Precio: ` + salida.precio_coche + `€</li>
             </ul>
             <br>
-            <h2>PRECIO FINAL: ` + (salida.precio_avion + salida.precio_coche + salida.precio_hotel) + `</h2>
+            <h2>PRECIO FINAL: ` + (salida.precio_avion + salida.precio_coche + salida.precio_hotel) + `€</h2>
+            </div>
         </body>
         </html>
         `;
+
         pdf.create(content).toFile(`./reserva_${pet.query.id}.pdf`, function (err, res) {
             if (err) {
                 resp.status(500).json({ mensaje_error: err, allOk: false })
@@ -373,12 +373,10 @@ app.route('/coche/descuento')
     });
 app.route('/avion/reservaAvion')
     .post(async (pet, resp) => {
-        //console.log(pet.body)
         try {
             const codigo = await reservarAvion(
                 pet.body.fecha_ida, pet.body.fecha_regreso, pet.body.cantidad_personas,
                 pet.body.lugar_origen, pet.body.lugar_destino, pet.body.precio)
-            console.log(codigo)
 
             resp.status(200).json({ avion_id: codigo[0], precio: pet.body.precio, allOk: true })
         }
@@ -404,6 +402,7 @@ app.route('/avion/disponibilidad')
 
             if (res.length > 0) {
                 var precio = res[0].precio //obtengo el primero
+                precio *= pet.body.personas
                 resp.status(200).json({ precio: precio, allOk: true })
 
             } else
@@ -496,6 +495,7 @@ app.route('/coche/disponibilidad')
                 )
 
             if (res.length > 0) {
+                
                 var precio = res[0].precio //obtengo el primero
                 if(pet.body.tanque_lleno){
                     precio += 40

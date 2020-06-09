@@ -2,8 +2,8 @@ const vuelos = [];
 
 const vuelo1 = () => ({
    nombre: "american airland",
-   fecha_ida: "2020-10-10",
-   fecha_regreso: "2020-10-20",
+   fecha_ida: "2020-06-10",
+   fecha_regreso: "2020-06-20",
    cantidad_personas: 100,
    lugar_origen: "alicante",
    lugar_destino: "madrid",
@@ -12,8 +12,8 @@ const vuelo1 = () => ({
 
 const vuelo2 = () => ({
    nombre: "avion kamikase",
-   fecha_ida: "2020-10-11",
-   fecha_regreso: "2020-10-20",
+   fecha_ida: "2020-06-11",
+   fecha_regreso: "2020-06-20",
    cantidad_personas: 100,
    lugar_origen: "alicante",
    lugar_destino: "narnia",
@@ -22,8 +22,8 @@ const vuelo2 = () => ({
 
 const vuelo3 = () => ({
    nombre: "allahu akbar",
-   fecha_ida: "2020-08-12",
-   fecha_regreso: "2020-10-20",
+   fecha_ida: "2020-06-12",
+   fecha_regreso: "2020-06-20",
    cantidad_personas: 100,
    lugar_origen: "alicante",
    lugar_destino: "kamehouse",

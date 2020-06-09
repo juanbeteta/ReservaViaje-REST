@@ -2,8 +2,8 @@ const coches = [];
 //reserva_id, fecha_recogida, fecha_devolucion, lugar_recogida, lugar_devolucion, tanque_lleno, precio
 const coche1 = () => ({
    nombre: "Ferrari",
-   fecha_recogida: "2020-10-10",
-   fecha_devolucion: "2020-10-11",
+   fecha_recogida: "2020-06-10",
+   fecha_devolucion: "2020-06-11",
    lugar_recogida:  "alicante",
    lugar_devolucion: "madrid",
    tanque_lleno: true,
