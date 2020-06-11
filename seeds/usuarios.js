@@ -2,19 +2,19 @@
  
  const createLogin1 = () =>({
     usuario: 'ecb34@gcloud.ua.es',
-    password: 'Juan',
+    password: '1234',
     descuento: false
  })
  
  const createLogin2 = () =>({
-    usuario: 'Juan1',
-    password: 'Juan1',
+    usuario: 'bttajuan@hotmail.com',
+    password: '1234',
     descuento: false
  })
  
  const createLogin3 = () =>({
-    usuario: 'Juan2',
-    password: 'Juan2',
+    usuario: 'eduardocorreal@hotmail.com',
+    password: '1234',
     descuento: true
  })
  
